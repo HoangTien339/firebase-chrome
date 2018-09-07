@@ -9,8 +9,8 @@
       <div class="nav-wrapper">
         <a href="#" class="brand-logo brand-logo-align">Fire Chrome</a>
         <ul id="nav-mobile" class="right">
-          <li title="Options" v-on:click="openOptions"><a id="nav-options"><i class="material-icons">settings</i></a></li>
-          <li title="Sign Out" v-on:click="openOptions"><a id="nav-options"><i class="fas fa-sign-out-alt"></i></a></li>
+          <li title="Options" v-show="isAuthenticated" v-on:click="openOptions"><a id="nav-options"><i class="material-icons">settings</i></a></li>
+          <li title="Sign Out" v-show="isAuthenticated" v-on:click="signOutForm"><a id="nav-options"><i class="fas fa-sign-out-alt"></i></a></li>
         </ul>
       </div>
     </nav>
@@ -63,18 +63,18 @@
       </div>
       <form action="#" @submit="signInForm" class="col s12">
         <div class="row margin-top-10">
-          <div v-show="" class="col s12 message">
+          <div class="col s12 message">
             <span v-for="(char, index) in message.split('')" :key="index" class="message-letter">{{ char }}</span>
           </div>
           <div class="input-field col s12">
             <i class="material-icons prefix">email</i>
-            <input id="email" v-model="signIn.email" placeholder="Enter email" type="text" class="validate">
-            <label for="apps_script_url">Email</label>
+            <input id="email_signin" v-model="signIn.email" placeholder="Enter email" type="text" class="validate">
+            <label for="email_signin">Email</label>
           </div>
           <div class="input-field col s12">
             <i class="material-icons prefix">lock</i>
-            <input id="password" v-model="signIn.password" placeholder="Enter password" type="password" class="validate">
-            <label for="apps_script_url">Password</label>
+            <input id="password_signin" v-model="signIn.password" placeholder="Enter password" type="password" class="validate">
+            <label for="password_signin">Password</label>
           </div>
           <div class="input-field col s12">
             <center>
@@ -96,24 +96,24 @@
           </ul>
         </div>
       </div>
-      <form action="#" @submit="signInForm" class="col s12">
+      <form action="#" @submit="signUpForm" class="col s12">
         <div class="row margin-top-10">
           <div v-show="" class="col s12 message">
             <span v-for="(char, index) in message.split('')" :key="index" class="message-letter">{{ char }}</span>
           </div>
           <div class="input-field col s12">
             <i class="material-icons prefix">email</i>
-            <input id="email" v-model="signIn.email" placeholder="Enter email" type="text" class="validate">
-            <label for="apps_script_url">Email</label>
+            <input id="email_signup" v-model="signUp.email" placeholder="Enter email" type="text" class="validate">
+            <label for="email_signup">Email</label>
           </div>
           <div class="input-field col s12">
             <i class="material-icons prefix">lock</i>
-            <input id="password" v-model="signIn.password" placeholder="Enter password" type="password" class="validate">
-            <label for="apps_script_url">Password</label>
+            <input id="password_signup" v-model="signUp.password" placeholder="Enter password" type="password" class="validate">
+            <label for="password_signup">Password</label>
           </div>
           <div class="input-field col s12">
             <center>
-              <button type='submit' name='signin' v-bind:class="{ disabled: isSignIn }" class='btn btn-large waves-effect indigo'><i v-show="isSignIn" class="fas fa-cog fa-spin left"></i>Sign Up</button>
+              <button type='submit' name='signup' v-bind:class="{ disabled: isSignUp }" class='btn btn-large waves-effect indigo'><i v-show="isSignUp" class="fas fa-cog fa-spin left"></i>Sign Up</button>
             </center>
           </div>
           <div class="right-align">

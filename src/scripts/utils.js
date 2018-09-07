@@ -1,11 +1,12 @@
 import firebase from 'firebase/app';
+import 'firebase/auth';
 import 'firebase/database';
 import { v4 as uuid } from 'uuid';
 import _ from 'lodash';
 import Consts from './consts';
 
 export class Storage {
-  constructor(driver = 'sync') {
+  constructor(driver = 'local') {
     this.driver = chrome.storage[driver];
   }
 
@@ -268,5 +269,43 @@ export class FirebaseDatabase extends Firebase {
     return this.database.ref(ref).orderByChild(field).startAt(startedAt).on('child_added', (snapshot, prevChildKey) => {
       cb && cb(snapshot, prevChildKey);
     });
+  }
+}
+
+export class FirebaseAuth extends FirebaseDatabase {
+  constructor(configs) {
+    super(configs);
+  }
+
+  async signin(data, success = null, failure = null) {
+    try {
+      let result = await firebase.auth()
+        .signInWithEmailAndPassword(data.email, data.password);
+      success && success(result);
+    } catch (e) {
+      console.log(e);
+      failure && failure(e);
+    }
+  }
+
+  async signup(data, success = null, failure = null) {
+    try {
+      let result = await firebase.auth()
+        .createUserWithEmailAndPassword(data.email, data.password);
+      success && success(result);
+    } catch (e) {
+      console.log(e);
+      failure && failure(e);
+    }
+  }
+
+  async signout(success = null, failure = null) {
+    try {
+      let result = await firebase.auth().signOut();
+      success && success(result);
+    } catch (e) {
+      console.log(e);
+      failure && failure(e);
+    }
   }
 }

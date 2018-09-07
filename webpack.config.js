@@ -124,10 +124,6 @@ module.exports = () => {
     plugins: [
       new CleanWebpackPlugin([path.resolve(__dirname, `${buildPath}`)]),
       new MiniCssExtractPlugin({ filename: devMode ? 'css/[name].css' : 'css/[name].[hash].css' }),
-      new CopyWebpackPlugin([
-        { from: `images`, to: `img` },
-        { from: `manifest.json`, to: `manifest.json` }
-      ], { context: srcPath }),
       new HtmlWebpackPlugin({
         template: path.join(__dirname, `${srcPath}/popup.html`),
         filename: 'popup.html',
@@ -142,7 +138,47 @@ module.exports = () => {
         template: path.join(__dirname, `${srcPath}/background.html`),
         filename: 'background.html',
         chunks: ['background', 'vendors']
+      }),
+      new CopyWebpackPlugin([
+        { from: `images`, to: `img` },
+        { from: `manifest.json`, to: `manifest.json` }
+      ], { context: srcPath }),
+      new ManifestPlugin({
+        maps: ['vendors.js', 'content_scripts.js'],
+        manifest: 'manifest.json'
       })
     ]
   };
 };
+
+function ManifestPlugin(options = {}) {
+  this.options = Object.assign({}, options)
+}
+
+ManifestPlugin.prototype.apply = function (compiler) {
+  compiler.hooks.afterEmit.tap('ManifestPlugin', (compilation) => {
+    let buildPath = compilation.outputOptions.path;
+    let assets = compilation.assets;
+    let mapNames = [];
+    for (let item in assets) {
+      let result = _.find(this.options.maps, val => {
+        // ?= positive lookahead. Ex: 'vendors.js' => 'vendors.*\.js$'
+        let reg = new RegExp(`${val.replace(/\.(?=[^.]*$)/, '.*\.')}$`);
+        return reg.test(item);
+      });
+
+      if (result != undefined) {
+        mapNames.push(item);
+      }
+    }
+
+    let manifestPath = path.join(buildPath, this.options.manifest);
+
+    if (assets[this.options.manifest] !== undefined) {
+      let obj = JSON.parse(assets[this.options.manifest].source().toString('utf-8'));
+      obj.content_scripts[0].js = mapNames
+
+      fs.writeFileSync(manifestPath, JSON.stringify(obj, null, 2));
+    }
+  });
+}

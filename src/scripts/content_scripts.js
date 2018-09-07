@@ -5,7 +5,7 @@ var MutationObserver = require('mutation-observer');
 export class ContentScript {
   constructor() {
     this.clicked = false;
-    this.storage = new Storage('local');
+    this.storage = new Storage();
   }
 
   extractMail(text) {

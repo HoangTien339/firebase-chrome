@@ -4,7 +4,7 @@ import { Storage, Notification, FirebaseDatabase } from './utils';
 export class Process {
   constructor() {
     this.storage = new Storage();
-    this.localStorage = new Storage('local');
+    this.localStorage = new Storage();
     this.refListener = null;
   }
 
