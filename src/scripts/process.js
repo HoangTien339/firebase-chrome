@@ -26,45 +26,35 @@ export class Process {
     if (typeof this.settings === 'undefined' || force) {
       this.settings = await this.storage.get('settings');
     }
+    this.fbDatabase = new FirebaseDatabase(this.firebase);
     return true;
   }
 
   async runListener(again = false) {
     await this.initialize(again);
-
-    let fbDatabase = new FirebaseDatabase(this.firebase);
+    let user = await this.storage.get('user');
     let init = true;
 
-    if (!this.settings.enableNotification) {
+    if (!this.settings.enableNotification || user === undefined) {
       return;
     }
 
-    if (this.realtimeDatabase.getNewItemBy === Consts.GET_NEW_ITEM_BY_GRAB_LIMIT) {
-      switch (this.realtimeDatabase.grabType) {
-        case Consts.GRAB_LIMIT_TO_FIRST:
-          fbDatabase.onFirstChildUpdated('notifications', 1, (snapshot) => {
-            this.triggerNotify(snapshot.val());
-          });
-          break;
-        case Consts.GRAB_LIMIT_TO_LAST:
-          fbDatabase.onNewChildAdded('notifications', 1, (snapshot, prevChildKey) => {
-            if (init) {
-              init = false;
-              return;
-            }
-            this.triggerNotify(snapshot.val());
-          });
-          break;
+    let ref = `${this.ref}/${user.uid}`;
+    this.fbDatabase.onNewChildAdded(ref, 1, snapshot => {
+      if (init) {
+        init = false;
+        return;
       }
-    } else if (this.realtimeDatabase.getNewItemBy === Consts.GET_NEW_ITEM_BY_ORDER_BY) {
-      fbDatabase.onAfterStartAtChild('notifications', this.realtimeDatabase.orderBy, Date.now(), (snapshot, prevChildKey) => {
-        this.triggerNotify(snapshot.val());
-      });
-    }
+      this.triggerNotify(snapshot.val(), snapshot.key);
+    });
   }
 
-  async triggerNotify(item) {
-    console.log(item);
+  async triggerNotify(item, key) {
+    let user = await this.storage.get('user');
+    if (item.notified || user === undefined) {
+      return;
+    }
+
     let buttons = [];
     if (item.ok === false && item.isNew === true) {
       // Add button close for new mail & non-exist
@@ -75,8 +65,12 @@ export class Process {
 
     let notiType = item.ok === true ? 'success' : 'warning';
     let icon = ((await this.localStorage.get('appsScript.icon_' + notiType)) || 'img/notification.png');
-    let noti = new Notification(null, 'basic', icon, item.title, item.message, buttons);
+    let noti = new Notification(null, 'basic', icon, item.title, item.body, buttons);
     noti.show();
+
+    let updates = {};
+    updates[`${this.ref}/${user.uid}/${key}/notified`] = true;
+    this.fbDatabase.update(updates);
 
     if (item.ok === true) {
       // Auto-close if mail existed
@@ -100,7 +94,6 @@ export class Process {
   }
 
   stopListener() {
-    let fbDatabase = new FirebaseDatabase(this.firebase);
-    fbDatabase.database.ref(this.realtimeDatabase.collection).off();
+    this.fbDatabase.database.ref(this.realtimeDatabase.collection).off();
   }
 }

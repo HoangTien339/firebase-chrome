@@ -4,6 +4,7 @@ import 'firebase/database';
 import { v4 as uuid } from 'uuid';
 import _ from 'lodash';
 import Consts from './consts';
+import $ from 'jquery';
 
 export class Storage {
   constructor(driver = 'local') {
@@ -272,40 +273,56 @@ export class FirebaseDatabase extends Firebase {
   }
 }
 
-export class FirebaseAuth extends FirebaseDatabase {
+export class FirebaseAuth extends Firebase {
   constructor(configs) {
     super(configs);
+    this.fbAuth = this.app.auth();
+    this.storage = new Storage();
+    this.user = {};
   }
 
-  async signin(data, success = null, failure = null) {
+  async signIn(data, success = null, failure = null) {
     try {
-      let result = await firebase.auth()
+      let result = await this.fbAuth
         .signInWithEmailAndPassword(data.email, data.password);
+      await this.setUserData(result.user);
       success && success(result);
     } catch (e) {
-      console.log(e);
       failure && failure(e);
     }
   }
 
-  async signup(data, success = null, failure = null) {
+  async signUp(data, success = null, failure = null) {
     try {
-      let result = await firebase.auth()
+      let result = await this.fbAuth
         .createUserWithEmailAndPassword(data.email, data.password);
+      await this.setUserData(result.user);
       success && success(result);
     } catch (e) {
-      console.log(e);
       failure && failure(e);
     }
   }
 
-  async signout(success = null, failure = null) {
+  async signOut(success = null, failure = null) {
     try {
-      let result = await firebase.auth().signOut();
+      let result = await this.fbAuth.signOut();
+      await this.setUserData();
       success && success(result);
     } catch (e) {
-      console.log(e);
       failure && failure(e);
+    }
+  }
+
+  async setUserData(data = {}) {
+    let user = {};
+    if (!$.isEmptyObject(data)) {
+      user.name = data.displayName;
+      user.email = data.email;
+      user.photoUrl = data.photoURL;
+      user.uid = data.uid;
+      await this.storage.set('user', user);
+    } else {
+      await this.storage.remove('user');
     }
   }
 }

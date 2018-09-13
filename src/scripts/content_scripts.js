@@ -14,24 +14,12 @@ export class ContentScript {
     return '';
   }
 
-  async onSendMail(data) {
-    let url = await this.storage.get('appsScript.url');
-    $.post({
-      data: JSON.stringify(data),
-      url: url,
-      contentType: 'application/json',
-      success: function(response, status, xhr) {
-        if (status === 'success') {
-          console.log('Success');
-        }
-      },
-      error: function(xhr, status, errors) {
-        console.log(xhr, status, errors);
-      }
-    });
+  async onSendMail(data, uid = '') {
+    data.notified = false;
+    chrome.runtime.sendMessage({ message: 'firebase.push', data: data });
   }
 
-  initObserver() {
+  async initObserver() {
     this.observer = new MutationObserver(() => {
       let mailContent = {};
       let btnSend = $("table[role='group']").find("div[role='button']");

@@ -83,11 +83,11 @@ readFromStorage().then((result) => {
           return;
         }
 
-        this.authenticator.signin(this.signIn, data => {
-          storage.set('signIn', this.signIn).then((result) => {
-            this.isSignIn = false;
-            this.isAuthenticated = true;
-          });
+        this.authenticator.signIn(this.signIn, data => {
+          this.isSignIn = false;
+          this.isAuthenticated = true;
+          this.authenticator.setUserData(data.user);
+          chrome.runtime.sendMessage({ message: 'firebase.runListener' });
         }, errors => {
           this.errors.push(errors.message);
           this.isSignIn = false;
@@ -98,21 +98,15 @@ readFromStorage().then((result) => {
         e.preventDefault();
         if (!this.isAuthenticated) return;
 
-        this.authenticator.signout(() => {
+        chrome.runtime.sendMessage({ message: 'firebase.stopListener', event: 'child_added' });
+        this.authenticator.signOut(() => {
           console.log('Sign-out successfully');
-          storage.remove('signUp').then((result) => {
-            console.log(result);
-            this.isSignUp = false;
-          });
-          storage.remove('signIn').then((result) => {
-            console.log(result);
-            this.isSignIn = false;
-          });
+          this.authenticator.setUserData();
+          this.isSignUp = false;
           this.isAuthenticated = false;
           this.showSignIn = true;
           this.showSignUp = false;
         }, errors => {
-          console.log('Sign-out failure');
           console.log(errors);
         });
       },
@@ -127,11 +121,11 @@ readFromStorage().then((result) => {
           return;
         }
 
-        this.authenticator.signup(this.signUp, data => {
-          storage.set('signUp', this.signUp).then((result) => {
-            this.isSignUp = false;
-            this.isAuthenticated = true;
-          });
+        this.authenticator.signUp(this.signUp, data => {
+          this.isSignUp = false;
+          this.isAuthenticated = true;
+          this.authenticator.setUserData(data.user);
+          chrome.runtime.sendMessage({ message: 'firebase.runListener' });
         }, errors => {
           this.isAuthenticated = false;
           this.errors.push(errors.message);
@@ -167,11 +161,10 @@ readFromStorage().then((result) => {
         this.showSignIn = !this.showSignIn;
         this.showSignUp = !this.showSignUp;
       },
-      redirectIfAuthenticated: async function () {
-        let signUpData = await storage.get('signUp');
-        let signInData = await storage.get('signIn');
+      redirectIfAuthenticated: async function() {
+        let userData = await storage.get('user');
 
-        if (signUpData || signInData) {
+        if (userData) {
           this.isAuthenticated = true;
         }
       }
